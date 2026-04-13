@@ -97,8 +97,14 @@ def add_draft(
 
     if len(title) > 30:
         raise Exception(f"标题超过 30 字限制（当前{len(title)}字）")
-    if len(content) > MAX_CONTENT_SIZE:
-        raise Exception(f"正文超过 {MAX_CONTENT_SIZE} 字限制（当前{len(content)}字）")
+    
+    # 计算纯文字数量（去除 HTML 标签）
+    import re
+    plain_text = re.sub(r'<[^>]+>', '', content)
+    plain_text_len = len(plain_text)
+    
+    if plain_text_len > MAX_CONTENT_SIZE:
+        raise Exception(f"正文超过 {MAX_CONTENT_SIZE} 字限制（当前{plain_text_len}字）")
     if digest and len(digest) > 120:
         raise Exception(f"摘要超过 120 字限制（当前{len(digest)}字）")
     if not thumb_media_id:
