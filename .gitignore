@@ -1,0 +1,15 @@
+.token_cache.json
+scripts/.token_cache.json
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.venv
+venv/
+*.egg-info/
+dist/
+build/
+.opencode/
