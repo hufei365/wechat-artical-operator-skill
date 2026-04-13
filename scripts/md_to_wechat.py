@@ -182,16 +182,99 @@ def apply_inline_styles(html: str, styles: dict, code_config: dict = None) -> st
     return html
 
 
+def extract_links_from_markdown(md_text: str) -> list:
+    """
+    从 Markdown 文本中提取超链接地址
+    
+    Args:
+        md_text: Markdown 格式文本
+    
+    Returns:
+        链接地址列表 [(链接文本，链接地址), ...]
+    """
+    import re
+    # 匹配 Markdown 链接格式：[文本](URL)
+    pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+    matches = re.findall(pattern, md_text)
+    
+    # 过滤掉图片链接和内部锚点
+    links = []
+    for text, url in matches:
+        if not url.startswith('http://') and not url.startswith('https://'):
+            continue
+        # 排除图片链接
+        if text.startswith('!'):
+            continue
+        links.append((text, url))
+    
+    return links
+
+
+def generate_links_section(links: list, theme_config: dict) -> str:
+    """
+    生成链接展示区域的 HTML
+    
+    Args:
+        links: 链接列表 [(链接文本，链接地址), ...]
+        theme_config: 主题配置
+    
+    Returns:
+        HTML 字符串
+    """
+    if not links:
+        return ''
+    
+    # 链接展示区域样式
+    container_style = (
+        "margin:2em 0 0 0; padding:20px 16px; "
+        "background:#f6f8fa; border-radius:8px; "
+        "border-left:4px solid #0366d6;"
+    )
+    
+    title_style = (
+        "font-size:16px; font-weight:bold; color:#0366d6; "
+        "margin:0 0 12px 0;"
+    )
+    
+    link_item_style = (
+        "font-size:14px; line-height:1.8; color:#586069; "
+        "margin:8px 0; padding:8px 12px; "
+        "background:#ffffff; border-radius:4px; "
+        "word-break:break-all; font-family:Consolas,Monaco,monospace;"
+    )
+    
+    html = f'<div style="{container_style}">'
+    html += f'<p style="{title_style}">📎 参考链接：</p>'
+    
+    for i, (text, url) in enumerate(links, 1):
+        html += f'<div style="{link_item_style}">'
+        html += f'<span style="color:#0366d6;">[{i}]</span> '
+        html += f'<span style="color:#24292e;">{text}</span><br>'
+        html += f'<span style="color:#032f62;">{url}</span>'
+        html += '</div>'
+    
+    html += '</div>'
+    return html
+
+
 def convert(md_text: str, theme: str = DEFAULT_THEME) -> str:
     """将 Markdown 转换为微信公众号可用的 HTML"""
     theme_config = get_theme(theme)
     styles = theme_config["styles"]
     code_config = theme_config.get("code", {})
     
+    # 提取链接
+    links = extract_links_from_markdown(md_text)
+    
     md_text = preprocess_nested_code_in_blockquotes(md_text)
 
     raw_html = markdown.markdown(md_text, extensions=["tables", "fenced_code", "nl2br", "sane_lists"])
     styled = apply_inline_styles(raw_html, styles, code_config=code_config)
+    
+    # 添加链接展示区域
+    if links:
+        links_html = generate_links_section(links, theme_config)
+        styled += links_html
 
     wrapper = (
         '<section style="font-family:-apple-system,BlinkMacSystemFont,'
